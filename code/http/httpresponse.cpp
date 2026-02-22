@@ -61,24 +61,24 @@ void HttpResponse::Init(const std::string& srcDir, std::string& path, bool isKee
 };
 
 void HttpResponse::MakeResponse(Buffer& buff) {
-    if(code_ == -1)
-    {
+    // 只有在code_为-1时才调用stat获取文件信息
+    if(code_ == -1) {
         // stat()获取文件的元信息（大小、权限、类型等）并写入 mmFileStat_
         if(stat((srcDir_ + path_).c_str(), &mmFileStat_) < 0 or S_ISDIR(mmFileStat_.st_mode))
-        /*
-            S_ISDIR() 是宏定义，用于判断 mmFileStat_.st_mode（文件模式）是否表示 “目录”；
-            这段代码的逻辑是：不允许直接访问目录，如果请求的路径是目录（比如 /static/），则返回 404；
-        */
+    /*
+        S_ISDIR() 是宏定义，用于判断 mmFileStat_.st_mode（文件模式）是否表示 “目录”；
+        这段代码的逻辑是：不允许直接访问目录，如果请求的路径是目录（比如 /static/），则返回 404；
+    */
             code_ = 404; // stat返回-1，说明文件不存在
         else if(!(mmFileStat_.st_mode & S_IROTH)) // 如果文件不可读
             code_ = 403; // 如果文件不可读，则为403 Forbidden
         else // 如果code_为-1
-            code_ = 200;
+                code_ = 200;
     }
-    ErrorHtml_();
-    AddStateLine_(buff);
-    AddHeaders_(buff);
-    AddBody_(buff);
+    ErrorHtml_(); // 状态码为错误码时，将请求路径替换为预设的错误页面路径，并重新获取错误页面的文件信息。
+    AddStateLine_(buff);// 添加状态行
+    AddHeaders_(buff); // 添加响应头
+    AddBody_(buff); // 添加响应体
 }
 
 char* HttpResponse::GetFile() {
@@ -139,7 +139,7 @@ void HttpResponse::AddBody_(Buffer& buff) {
     close(srcFD); // 关闭原文件不影响已存在的内存映射
     buff.append("Content-Length: " + std::to_string(mmFileStat_.st_size) + "\r\n"); 
     buff.append("\r\n");
-    buff.append(mmFile_, mmFileStat_.st_size);
+    // 文件内容不添加到缓冲区，而是通过iov[1]直接发送
 }
 
 void HttpResponse::UnmapFile() {

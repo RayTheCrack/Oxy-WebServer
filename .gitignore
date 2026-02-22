@@ -1,2 +1,5 @@
 .vscode
-REWRITE_PLAN.md
+RW.md
+test.html
+build/*
+log/*
