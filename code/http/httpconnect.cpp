@@ -6,11 +6,11 @@ const char* HttpConnect::srcDir = "";
 
 HttpConnect::HttpConnect() {
     fd_ = -1;
-    addr_ = {0};
+    memset(&addr_, 0, sizeof(addr_));
     is_running_.store(false);
     isKeepAlive_ = false;
     iovcnt_ = 0;
-    iov[0] = iov[1] = {0}; // 初始化iovec
+    iov[0] = iov[1] = {nullptr, 0}; // 初始化iovec
 }
 
 HttpConnect::~HttpConnect() {
@@ -85,7 +85,7 @@ ssize_t HttpConnect::read(int fd, Buffer& buff) {
             break;
         }
         // 取到数据，写入目标缓冲区
-        if(len <= iov[0].iov_len) buff.append(static_cast<char*>(iov[0].iov_base), len);
+        if(len <= static_cast<ssize_t>(iov[0].iov_len)) buff.append(static_cast<char*>(iov[0].iov_base), len);
         else {
             buff.append(static_cast<char*>(iov[0].iov_base), iov[0].iov_len);
             buff.append(temp_buff, len - iov[0].iov_len);
@@ -127,7 +127,7 @@ ssize_t HttpConnect::write(int fd, Buffer& buff) {
         }
         // 更新已写字节数和缓冲区指针
         write_bytes += len;
-        if(write_bytes >= readable) {
+        if(write_bytes >= static_cast<ssize_t>(readable)) {
             // 缓冲区数据全部写完
             buff.reset(); // 清空缓冲区
             break;
@@ -176,7 +176,7 @@ ssize_t HttpConnect::writeResponse(int fd) {
         }
         // 更新已写字节数
         write_bytes += len;
-        if(write_bytes >= total_to_write) 
+        if(write_bytes >= static_cast<ssize_t>(total_to_write)) 
         {
             // 数据全部写完，清空写缓冲区
             writeBuff_.reset();
@@ -186,7 +186,7 @@ ssize_t HttpConnect::writeResponse(int fd) {
             break;
         } else {
             // 只部分写入，更新iov
-            if(len >= iov[0].iov_len) {
+            if(len >= static_cast<ssize_t>(iov[0].iov_len)) {
                 // iov[0]已写完，处理iov[1]
                 size_t remaining = len - iov[0].iov_len;
                 iov[0].iov_len = 0;
@@ -221,7 +221,7 @@ bool HttpConnect::process() {
     }
     // 解析HTTP请求
     bool parse_success = request_.parse(readBuff_);
-    int status_code = parse_success ? 200 : 400; // 解析成功=200，失败=400
+    // int status_code = parse_success ? 200 : 400; // 解析成功=200，失败=400
     bool is_keep_alive = parse_success ? request_.IsKeepAlive() : false; // 失败则关闭连接
     isKeepAlive_ = is_keep_alive; // 保存Keep-Alive状态
     if(parse_success) 

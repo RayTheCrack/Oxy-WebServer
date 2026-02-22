@@ -1,0 +1,59 @@
+2026-02-23 03:13:46.138 [INFO] ========================================
+2026-02-23 03:13:46.138 [INFO] Starting HeapTimer Test Suite
+2026-02-23 03:13:46.138 [INFO] ========================================
+2026-02-23 03:13:46.138 [INFO] === Test 1: Basic Add and Delete ===
+2026-02-23 03:13:46.138 [INFO] Added 3 timers
+2026-02-23 03:13:46.138 [INFO] Next tick: 500 ms
+2026-02-23 03:13:46.138 [INFO] Callback 2 executed!
+2026-02-23 03:13:46.138 [INFO] Removed fd 2
+2026-02-23 03:13:46.138 [INFO] ✓ Test 1 passed!
+2026-02-23 03:13:46.138 [INFO] === Test 2: Timer Timeout ===
+2026-02-23 03:13:46.138 [INFO] Added timer for fd 1 with 100ms timeout
+2026-02-23 03:13:46.138 [INFO] Timer not expired yet (callback_count = 0)
+2026-02-23 03:13:46.289 [INFO] Callback 1 executed!
+2026-02-23 03:13:46.289 [INFO] Timer expired! (callback_count = 1)
+2026-02-23 03:13:46.289 [INFO] ✓ Test 2 passed!
+2026-02-23 03:13:46.289 [INFO] === Test 3: Multiple Timers ===
+2026-02-23 03:13:46.289 [INFO] Added 3 timers: fd1=300ms, fd2=150ms, fd3=450ms
+2026-02-23 03:13:46.469 [INFO] Callback 2 executed!
+2026-02-23 03:13:46.469 [INFO] After 180ms: callback_count = 1
+2026-02-23 03:13:46.620 [INFO] After 330ms: callback_count = 1
+2026-02-23 03:13:46.621 [WARN] Expected callback_count=2, got 1
+2026-02-23 03:13:46.772 [INFO] Callback 3 executed!
+2026-02-23 03:13:46.772 [INFO] After 480ms: callback_count = 2
+2026-02-23 03:13:46.772 [WARN] Expected callback_count=3, got 2
+2026-02-23 03:13:46.772 [INFO] ✓ Test 3 passed!
+2026-02-23 03:13:46.772 [INFO] === Test 4: Adjust Timeout ===
+2026-02-23 03:13:46.772 [INFO] Added timer for fd 1 with 150ms timeout
+2026-02-23 03:13:46.873 [INFO] Adjusted fd 1 timeout to 200ms from now
+2026-02-23 03:13:47.023 [INFO] After adjustment and 150ms wait: callback_count = 0 (no expiration)
+2026-02-23 03:13:47.124 [INFO] Callback 1 executed!
+2026-02-23 03:13:47.124 [INFO] After 100ms more: callback_count = 1 (timer expired)
+2026-02-23 03:13:47.124 [INFO] ✓ Test 4 passed!
+2026-02-23 03:13:47.124 [INFO] === Test 5: Clear All Timers ===
+2026-02-23 03:13:47.124 [INFO] Added 3 timers
+2026-02-23 03:13:47.124 [INFO] Next tick before clear: 1000 ms
+2026-02-23 03:13:47.124 [INFO] Cleared all timers
+2026-02-23 03:13:47.124 [INFO] Next tick after clear: -1 ms (no timers)
+2026-02-23 03:13:47.124 [INFO] ✓ Test 5 passed!
+2026-02-23 03:13:47.124 [INFO] === Test 6: Do Work (Callback Execution) ===
+2026-02-23 03:13:47.124 [INFO] Added 2 timers
+2026-02-23 03:13:47.124 [INFO] Callback 1 executed!
+2026-02-23 03:13:47.124 [INFO] After do_work(1): callback_count = 1
+2026-02-23 03:13:47.124 [INFO] Callback 2 executed!
+2026-02-23 03:13:47.124 [INFO] After do_work(2): callback_count = 2
+2026-02-23 03:13:47.124 [INFO] ✓ Test 6 passed!
+2026-02-23 03:13:47.124 [INFO] === Test 7: Update Callback for Existing FD ===
+2026-02-23 03:13:47.124 [INFO] Added timer for fd 1 with callback_1 (5000ms timeout)
+2026-02-23 03:13:47.124 [INFO] Updated timer for fd 1 with callback_2 (5000ms timeout)
+2026-02-23 03:13:47.124 [INFO] Callback 2 executed!
+2026-02-23 03:13:47.124 [INFO] Timer callback executed: callback_count = 1
+2026-02-23 03:13:47.124 [INFO] ✓ Test 7 passed!
+2026-02-23 03:13:47.124 [INFO] === Test 8: Get Next Tick ===
+2026-02-23 03:13:47.124 [INFO] Empty timer, next_tick = -1
+2026-02-23 03:13:47.124 [INFO] Added 1000ms timer, next_tick = 1000 ms
+2026-02-23 03:13:47.124 [INFO] Added 300ms timer, next_tick = 300 ms
+2026-02-23 03:13:47.124 [INFO] ✓ Test 8 passed!
+2026-02-23 03:13:47.124 [INFO] ========================================
+2026-02-23 03:13:47.124 [INFO] All tests passed! ✓
+2026-02-23 03:13:47.124 [INFO] ========================================
