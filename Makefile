@@ -20,7 +20,8 @@ SOURCES = $(SRC_DIR)/main.cpp \
 		  $(SRC_DIR)/http/httpresponse.cpp \
 		  $(SRC_DIR)/http/httpconnect.cpp \
 		  $(SRC_DIR)/server/epoller.cpp \
-		  $(SRC_DIR)/timer/heaptimer.cpp
+		  $(SRC_DIR)/timer/heaptimer.cpp \
+		  $(SRC_DIR)/pool/threadpool.cpp
 
 # Object files
 OBJECTS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SOURCES))
