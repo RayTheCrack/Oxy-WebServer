@@ -39,7 +39,7 @@ public:
 
     // 初始化日志系统，指定日志文件路径和日志级别
     void initLogger(const std::string& log_file,
-         LogLevel level, int max_queue_size, int64_t log_flush_inteval);
+         LogLevel level, int max_queue_size);
     // 记录日志
     void log(LogLevel level, const std::string& message);
     void log(LogLevel level, const Buffer& buffer);

@@ -54,7 +54,7 @@ int16_t HttpConnect::get_port() const {
     return ntohs(addr_.sin_port);
 }
 
-ssize_t HttpConnect::read(int fd, Buffer& buff) {
+ssize_t HttpConnect::read(int fd, Buffer& buff, int& errno_) {
     if(fd < 0 or !is_running_) {
         LOG_ERROR("read failed: invalid fd or connection closed");
         return -1;
@@ -69,6 +69,7 @@ ssize_t HttpConnect::read(int fd, Buffer& buff) {
         ssize_t len = readv(fd, iov, 2);
         if(len < 0) 
         {
+            errno_ = errno;
             if(errno == EAGAIN || errno == EWOULDBLOCK) // 无数据可读
                 break;
             // 真正的错误（如连接断开、系统错误）
@@ -99,7 +100,7 @@ ssize_t HttpConnect::read(int fd, Buffer& buff) {
     return read_bytes;
 }
 
-ssize_t HttpConnect::write(int fd, Buffer& buff) {
+ssize_t HttpConnect::write(int fd, Buffer& buff, int& errno_) {
     if (fd < 0 or !is_running_ or buff.readable_size() == 0) {
         return 0; // 无数据可写，返回0
     }
@@ -113,6 +114,7 @@ ssize_t HttpConnect::write(int fd, Buffer& buff) {
         // 使用writev发送数据（比多次write减少系统调用）
         ssize_t len = writev(fd, iov, 1);
         if(len < 0) {
+            errno_ = errno;
             if(errno == EAGAIN || errno == EWOULDBLOCK) {
                 // 写缓冲区满，暂时无法写入（ET模式下需记录未写完的数据）
                 LOG_DEBUG("writev EAGAIN, fd: {}, remain bytes: {}", 

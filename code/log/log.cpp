@@ -11,13 +11,13 @@ Logger& Logger::getInstance() {
 }
 
 void Logger::initLogger(const std::string& log_file,
-     LogLevel level, int max_queue_size, int64_t log_flush_interval) {
+     LogLevel level, int max_queue_size) {
     if (is_running_.load()) {
         return; // 已经初始化
     }
     current_level_ = level;
     log_file_ = log_file;
-    LEAST_FLUSH_SEC_GAP = log_flush_interval;
+    LEAST_FLUSH_SEC_GAP = Config::getInstance().c_log_flush_interval; // 从配置文件读取刷新间隔
 
     std::filesystem::path log_path(log_file_);
     // 确保日志目录存在，如果不存在则创建

@@ -31,10 +31,10 @@ const std::unordered_map<int, std::string> HttpResponse::CODE_STATUS {
 };
 
 const std::unordered_map<int, std::string> HttpResponse::CODE_PATH {
-    { 400, "/400.html"},
-    { 403, "/403.html"},
-    { 404, "/404.html"},
-    { 500, "/500.html"},
+    { 400, "400.html"},
+    { 403, "403.html"},
+    { 404, "404.html"},
+    { 500, "500.html"},
 };
 
 HttpResponse::HttpResponse() {
@@ -132,7 +132,8 @@ void HttpResponse::AddBody_(Buffer& buff) {
     LOG_DEBUG("File path: {}",std::string(srcDir_ + path_));
     void* mmRet =  mmap(0, mmFileStat_.st_size, PROT_READ, MAP_PRIVATE, srcFD, 0);
     if(mmRet == MAP_FAILED) {
-        ErrorContent(buff, "File Mmap Failed!");
+        close(srcFD);
+        ErrorContent(buff, "Memory Map Failed!");
         return;
     }   
     mmFile_ = static_cast<char*>(mmRet);

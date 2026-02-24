@@ -40,9 +40,13 @@ void SqlConnPool::Init(const char* host, int port,
     }
     MAX_CONN_ = created; // 设置最大连接数
     freeCount_.store(created); // 设置空闲连接数
-    LOG_INFO(
-        "SqlConnPool Init success | total conn: {}, created: {}, sem init: {}",
-        MAX_CONN_, created, created);
+    if(created == 0) {
+        LOG_WARN("SqlConnPool Init: No database connections created. Server will continue without database support.");
+    } else {
+        LOG_INFO(
+            "SqlConnPool Init success | total conn: {}, created: {}, sem init: {}",
+            MAX_CONN_, created, created);
+    }
 }
 // 获取连接
 MYSQL* SqlConnPool::getConnection() {

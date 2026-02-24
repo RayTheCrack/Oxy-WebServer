@@ -85,7 +85,7 @@ void Config::parse_config_file(const std::string& filePath) {
             else if (key == "max_connections") c_maxConnection = std::stoi(value);
             else if (key == "log_level") c_log_level = std::stoi(value);
             else if (key == "max_body_size") c_max_body_size = std::stoi(value);
-            else if (key == "connection_timeout") c_timeout = std::stoi(value);
+            else if (key == "connection_timeout") c_timeout = std::stoi(value) * 1000; // 转换为毫秒
             else if (key == "db_host") c_db_host = value;
             else if (key == "db_port") c_db_port = std::stoi(value);
             else if (key == "db_user") c_db_user = value;

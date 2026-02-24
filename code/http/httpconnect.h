@@ -23,8 +23,8 @@ public:
     void init(int socket_fd, const sockaddr_in& addr);
 
     // 每个连接的读写窗口
-    ssize_t read(int fd, Buffer& buff);
-    ssize_t write(int fd, Buffer& buff);
+    ssize_t read(int fd, Buffer& buff, int& errno_);
+    ssize_t write(int fd, Buffer& buff, int& errno_);
     ssize_t writeResponse(int fd); // 写入已准备好的响应数据
 
     void close();

@@ -111,8 +111,17 @@ void HttpRequest::ParseHeader_(const std::string& line) {
 }      
 
 void HttpRequest::ParsePath_() {
+    // Default to the html folder for the UI pages
     if(path_ == "/") path_ = "/index.html";
     else {
+        // 检查是否是静态资源请求（CSS、JS、图片等）
+        if(path_.find("/css/") == 0 || path_.find("/js/") == 0 || 
+           path_.find("/images/") == 0 || path_.find("/fonts/") == 0) {
+            // 静态资源保持原路径
+            return;
+        }
+        
+        // 检查是否是预定义的HTML页面
         for(auto &item : DEFAULT_HTML) {
             if(item == path_) {
                 path_ += ".html";
@@ -120,7 +129,7 @@ void HttpRequest::ParsePath_() {
             }
         }
     }
-}    
+}
 
 void HttpRequest::ParseBody_(const std::string& line) {
     body_ = line;
@@ -134,10 +143,14 @@ void HttpRequest::ParseBody_(const std::string& line) {
  * 它会解析表单数据，并根据请求路径进行相应的用户验证
  */
 void HttpRequest::ParsePost_() {
+    LOG_DEBUG("ParsePost_ called, method_: {}, content-type: {}", 
+              method_.c_str(), header_["Content-Type"].c_str());
     // 检查请求方法是否为POST且Content-Type是否为表单编码类型
     if(method_ == "POST" && header_["Content-Type"] == "application/x-www-form-urlencoded") {
+        LOG_DEBUG("Valid POST request detected, parsing form data...");
         // 解码URL编码的POST数据
         ParseFromUrlencoded_();
+        LOG_DEBUG("Form data parsed, path_: {}", path_.c_str());
         // 检查当前路径是否在预定义的HTML标签映射中
         if(DEFAULT_HTML_TAG.count(path_)) {
             // 获取对应的标签值
@@ -147,18 +160,27 @@ void HttpRequest::ParsePost_() {
             if(tag == 0 or tag == 1) {
                 // 设置是否为登录操作的标志
                 bool isLogin = (tag == 1);
+                LOG_DEBUG("Calling UserVerify for user: {}, login: {}", 
+                         post_["username"].c_str(), isLogin);
                 // 验证用户名和密码
                 if(UserVerify(post_["username"], post_["password"], isLogin)) {
                     // 验证成功，重定向到欢迎页面
                     path_ = "/welcome.html";
+                    LOG_DEBUG("User verification successful, redirecting to welcome.html");
                 } 
                 else {
                     // 验证失败，重定向到错误页面
                     path_ = "/error.html";
+                    LOG_DEBUG("User verification failed, redirecting to error.html");
                 }
             }
+        } else {
+            LOG_DEBUG("Path {} not found in DEFAULT_HTML_TAG", path_.c_str());
         }
-    }   
+    } else {
+        LOG_DEBUG("Not a valid POST form request - method: {}, content-type: {}", 
+                  method_.c_str(), header_["Content-Type"].c_str());
+    }
 }
 
 /**
@@ -293,16 +315,6 @@ bool HttpRequest::UserVerify(const std::string& name, const std::string& passwor
             return false;
         }
     }
-    // 验证密码格式：只允许字母、数字和下划线
-    for(char ch : password) {
-        if(!((ch >= 'a' && ch <= 'z') or
-           (ch >= 'A' && ch <= 'Z') or 
-           (ch >= '0' && ch <= '9') or 
-           ch == '_')) {
-            LOG_DEBUG("Invalid password format!");
-            return false;
-        }
-    }
     LOG_INFO("User Verifying: {}", name);
     MYSQL* sql = nullptr;
     SqlConnRAII(&sql, &SqlConnPool::getInstance()); // 从连接池中获取数据库连接
@@ -322,7 +334,8 @@ bool HttpRequest::UserVerify(const std::string& name, const std::string& passwor
 
     // 执行查询语句，如果失败则释放结果集并返回false，注意：mysql_query返回0表示成功
     if(mysql_query(sql, query)) {
-        mysql_free_result(res);
+        LOG_ERROR("MySQL query failed: {}", mysql_error(sql));
+        if(res) mysql_free_result(res);
         return false;
     }
 
@@ -354,14 +367,18 @@ bool HttpRequest::UserVerify(const std::string& name, const std::string& passwor
         snprintf(query, 256, "INSERT INTO user(username, password) VALUES('%s', '%s')", name.c_str(), password.c_str());
         LOG_DEBUG("{}", query);
         if(mysql_query(sql, query)) {
-            LOG_DEBUG("Database insert user failed!");
+            LOG_ERROR("Insert user failed: {}", mysql_error(sql));
             flag = false;
         }
-        else flag = true; 
+        else {
+            LOG_INFO("Inserted user: {}", name);
+            flag = true;
+        }
     }
     // 无需手动释放，RAII机制会自动释放，手动释放可能造成资源重复释放
     // SqlConnPool::getInstance().freeConnection(sql); // 释放数据库连接
-    LOG_INFO("User {} Verify Successful!!", name);
+    if(flag) LOG_INFO("User {} Verify Successful!!", name);
+    else LOG_WARN("User {} Verify Failed.", name);
     return flag;
 }
 

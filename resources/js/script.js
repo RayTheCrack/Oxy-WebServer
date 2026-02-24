@@ -104,6 +104,99 @@ document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('videoGallery')) {
         loadVideos();
     }
+
+    // 注册页交互：密码强度与启用提交按钮
+    const passwordInput = document.getElementById('password');
+    const confirmInput = document.getElementById('confirmPassword');
+    const usernameInput = document.getElementById('username');
+    const strengthMeter = document.getElementById('strengthMeter');
+    const strengthText = document.getElementById('strengthText');
+    const registerBtn = document.getElementById('registerBtn');
+
+    function calcPasswordScore(pw) {
+        let score = 0;
+        if (!pw) return 0;
+        // length
+        score += Math.min(10, pw.length) * 2;
+        // variety
+        if (/[a-z]/.test(pw)) score += 10;
+        if (/[A-Z]/.test(pw)) score += 10;
+        if (/[0-9]/.test(pw)) score += 10;
+        if (/[^A-Za-z0-9]/.test(pw)) score += 15;
+        return Math.min(100, score);
+    }
+
+    function updateStrength(pw) {
+        if (!strengthMeter || !strengthText) return;
+        const score = calcPasswordScore(pw);
+        strengthMeter.style.width = score + "%";
+        strengthMeter.style.transition = 'width 180ms ease';
+        if (score < 30) {
+            strengthMeter.style.background = 'var(--accent-red)';
+            strengthText.textContent = '密码强度：弱';
+        } else if (score < 60) {
+            strengthMeter.style.background = '#ffb142';
+            strengthText.textContent = '密码强度：中等';
+        } else {
+            strengthMeter.style.background = '#2ed573';
+            strengthText.textContent = '密码强度：强';
+        }
+    }
+
+    function validateUsername(name) {
+        return /^[A-Za-z0-9_]{3,20}$/.test(name);
+    }
+
+    function refreshRegisterState() {
+        if (!registerBtn) return;
+        const usernameValid = usernameInput ? validateUsername(usernameInput.value.trim()) : false;
+        const pw = passwordInput ? passwordInput.value : '';
+        const pwOk = pw && pw.length >= 6;
+        const match = confirmInput ? (confirmInput.value === pw) : true;
+        if (usernameValid && pwOk && match) registerBtn.removeAttribute('disabled');
+        else registerBtn.setAttribute('disabled', '');
+    }
+
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function(e){
+            const pw = e.target.value || '';
+            updateStrength(pw);
+            const passwordError = document.getElementById('passwordError');
+            if (passwordError) passwordError.style.display = (pw.length >= 6) ? 'none' : 'block';
+            refreshRegisterState();
+        });
+    }
+
+    if (confirmInput) {
+        confirmInput.addEventListener('input', function(e){
+            const pw = passwordInput ? passwordInput.value : '';
+            const okEl = document.getElementById('confirmPasswordSuccess');
+            const errEl = document.getElementById('confirmPasswordError');
+            if (e.target.value === pw) {
+                if (okEl) okEl.style.display = 'block';
+                if (errEl) errEl.style.display = 'none';
+            } else {
+                if (okEl) okEl.style.display = 'none';
+                if (errEl) errEl.style.display = 'block';
+            }
+            refreshRegisterState();
+        });
+    }
+
+    if (usernameInput) {
+        usernameInput.addEventListener('input', function(e){
+            const okEl = document.getElementById('usernameSuccess');
+            const errEl = document.getElementById('usernameError');
+            if (validateUsername(e.target.value.trim())) {
+                if (okEl) okEl.style.display = 'block';
+                if (errEl) errEl.style.display = 'none';
+            } else {
+                if (okEl) okEl.style.display = 'none';
+                if (errEl) errEl.style.display = 'block';
+            }
+            refreshRegisterState();
+        });
+    }
 });
 
 // 动态加载图片库
