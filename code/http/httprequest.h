@@ -57,7 +57,9 @@ private:
     // 解析HTTP请求方法
     void ParsePost_();
     // 解析url编码
-    void ParseFromUrlencoded_(); 
+    void ParseFromUrlencoded_();
+    // 解析JSON格式的请求体
+    void ParseFromJson_(); 
     // 解析HTTP请求参数
     static int ConverHex(char ch);
 

@@ -81,7 +81,7 @@ void HeapTimer::add(int fd, int timeout, const TimeoutCB& cb) {
     }
 }
 
-// 调整指定fd的超时时间
+// 调整指定fd的超时时间，从当前时间开始计算新的过期时间
 void HeapTimer::adjust(int fd, int new_expire_time) {
     assert(fd >= 0 and new_expire_time >= 0 and map_.count(fd) > 0);
     size_t idx = map_[fd];

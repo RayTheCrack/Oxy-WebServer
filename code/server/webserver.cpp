@@ -3,6 +3,14 @@
 #include <string>
 #include <cstring>
 
+int WebServer::SetFdNonblock(int fd) {
+    int old_option = fcntl(fd, F_GETFL);
+    int new_option = old_option | O_NONBLOCK;
+    fcntl(fd, F_SETFL, new_option);
+    return old_option;
+}
+
+
 WebServer::WebServer()
 {
     port_ = Config::getInstance().c_port;    
@@ -61,7 +69,7 @@ WebServer::~WebServer() {
 
 void WebServer::InitEventMode_(int trigMode) {
     listenEvent_ = EPOLLRDHUP;
-    connEvent_ = EPOLLONESHOT | EPOLLRDHUP;
+    connEvent_ = EPOLLONESHOT | EPOLLRDHUP; 
     switch(trigMode) {
         case 1: break; // 默认就是LT
         case 2: connEvent_ |= EPOLLET; break; // 连接使用ET
@@ -187,9 +195,17 @@ void WebServer::OnRead_(HttpConnect& client) {
     OnProcess(client); // 处理HTTP请求
 }
 
+/**
+ * 处理HTTP连接的函数
+ * 根据HTTP连接的处理结果，修改epoll的事件类型
+ * @param client HTTP连接对象引用
+ */
 void WebServer::OnProcess(HttpConnect& client) {
+    // 调用client的process方法处理HTTP请求
+    // 如果处理成功（返回true），则将事件修改为可写（EPOLLOUT）
+    // 如果处理失败（返回false），则将事件修改为可读（EPOLLIN）
     if(client.process()) {
-        epoller_->mod_fd(client.get_fd(), connEvent_ | EPOLLOUT); // 修改事件为可写
+        epoller_->mod_fd(client.get_fd(), connEvent_ | EPOLLOUT); // 修改事件为可写，准备发送响应
     }
     else {
         epoller_->mod_fd(client.get_fd(), connEvent_ | EPOLLIN); // 修改事件为可读，继续读取请求
@@ -279,12 +295,5 @@ bool WebServer::InitSocket_() {
     WebServer::SetFdNonblock(listenFd_);
     LOG_INFO("Server port: {}, listen mode: {}, Open linger: {}", port_, (listenEvent_ & EPOLLET) ? "ET" : "LT", openLinger_);      
     return true;
-}
-
-int WebServer::SetFdNonblock(int fd) {
-    int old_option = fcntl(fd, F_GETFL);
-    int new_option = old_option | O_NONBLOCK;
-    fcntl(fd, F_SETFL, new_option);
-    return old_option;
 }
 

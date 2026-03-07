@@ -145,12 +145,23 @@ void HttpRequest::ParseBody_(const std::string& line) {
 void HttpRequest::ParsePost_() {
     LOG_DEBUG("ParsePost_ called, method_: {}, content-type: {}", 
               method_.c_str(), header_["Content-Type"].c_str());
-    // 检查请求方法是否为POST且Content-Type是否为表单编码类型
-    if(method_ == "POST" && header_["Content-Type"] == "application/x-www-form-urlencoded") {
+    // 检查请求方法是否为POST
+    if(method_ == "POST") {
+        // 检查Content-Type是否为表单编码类型
+        if(header_["Content-Type"] == "application/x-www-form-urlencoded") {
         LOG_DEBUG("Valid POST request detected, parsing form data...");
         // 解码URL编码的POST数据
         ParseFromUrlencoded_();
         LOG_DEBUG("Form data parsed, path_: {}", path_.c_str());
+        }
+        // 检查Content-Type是否为JSON格式
+        else if(header_["Content-Type"] == "application/json") {
+            LOG_DEBUG("Valid JSON POST request detected, parsing JSON data...");
+            // 解析JSON格式的POST数据
+            ParseFromJson_();
+            LOG_DEBUG("JSON data parsed, path_: {}", path_.c_str());
+        }
+        
         // 检查当前路径是否在预定义的HTML标签映射中
         if(DEFAULT_HTML_TAG.count(path_)) {
             // 获取对应的标签值
@@ -178,7 +189,7 @@ void HttpRequest::ParsePost_() {
             LOG_DEBUG("Path {} not found in DEFAULT_HTML_TAG", path_.c_str());
         }
     } else {
-        LOG_DEBUG("Not a valid POST form request - method: {}, content-type: {}", 
+        LOG_DEBUG("Not a valid POST request - method: {}, content-type: {}", 
                   method_.c_str(), header_["Content-Type"].c_str());
     }
 }
@@ -382,6 +393,136 @@ bool HttpRequest::UserVerify(const std::string& name, const std::string& passwor
     return flag;
 }
 
+/**
+ * @brief 解析JSON格式的请求体
+ * 该函数处理Content-Type为application/json的请求体，将其转换为键值对并存入post_映射中
+ * 这是一个简易版的JSON解析器，支持基本的键值对解析
+ */
+void HttpRequest::ParseFromJson_() {
+    if (body_.empty()) {
+        LOG_DEBUG("Empty JSON body");
+        return;
+    }
+    // 简易JSON解析器实现
+    size_t pos = 0;
+    size_t len = body_.length();
+    // 跳过开头的空白字符
+    while(pos < len and (body_[pos] == ' ' or body_[pos] == '\t' or body_[pos] == '\n' or body_[pos] == '\r')) {
+        pos++;
+    }
+    // 检查JSON对象是否以'{'开头
+    if(pos >= len or body_[pos] != '{') {
+        LOG_ERROR("Invalid JSON format: missing opening brace");
+        return;
+    }
+    pos++; // 跳过'{'
+    while(pos < len) {
+        // 跳过空白字符
+        while(pos < len and (body_[pos] == ' ' or body_[pos] == '\t' or body_[pos] == '\n' or body_[pos] == '\r')) {
+            pos++;
+        }
+        // 检查是否到达JSON对象的结尾
+        if(pos >= len or body_[pos] == '}') {
+            break;
+        }
+        // 解析键
+        if(body_[pos] != '"') {
+            LOG_ERROR("Invalid JSON format: expected quote for key");
+            return;
+        }
+        size_t key_start = ++pos;
+        while(pos < len and body_[pos] != '"' and body_[pos] != '\\') {
+            pos++;
+        }
+        // 处理转义字符
+        while(pos < len and body_[pos] == '\\') {
+            pos += 2; // 跳过转义字符和被转义的字符
+            while(pos < len and body_[pos] != '"' and body_[pos] != '\\') {
+                pos++;
+            }
+        }
+        if(pos >= len or body_[pos] != '"') {
+            LOG_ERROR("Invalid JSON format: missing closing quote for key");
+            return;
+        }
+        std::string key = body_.substr(key_start, pos - key_start);
+        pos++; // 跳过结束引号
+        // 跳过空白字符
+        while(pos < len and (body_[pos] == ' ' or body_[pos] == '\t' or body_[pos] == '\n' or body_[pos] == '\r')) {
+            pos++;
+        }
+        // 检查是否有冒号
+        if(pos >= len or body_[pos] != ':') {
+            LOG_ERROR("Invalid JSON format: expected colon after key");
+            return;
+        }
+        pos++; // 跳过冒号
+        // 跳过空白字符
+        while(pos < len and (body_[pos] == ' ' or body_[pos] == '\t' or body_[pos] == '\n' or body_[pos] == '\r')) {
+            pos++;
+        }
+        // 解析值
+        std::string value;
+        if(body_[pos] == '"') {
+            // 字符串值
+            size_t value_start = ++pos;
+            while(pos < len and body_[pos] != '"' and body_[pos] != '\\') {
+                pos++;
+            }
+            // 处理转义字符
+            while(pos < len and body_[pos] == '\\') {
+                pos += 2; // 跳过转义字符和被转义的字符
+                while(pos < len and body_[pos] != '"' and body_[pos] != '\\') {
+                    pos++;
+                }
+            }
+            if(pos >= len or body_[pos] != '"') {
+                LOG_ERROR("Invalid JSON format: missing closing quote for value");
+                return;
+            }
+            value = body_.substr(value_start, pos - value_start);
+            pos++; // 跳过结束引号
+        } else if(body_[pos] == 't' or body_[pos] == 'f') {
+            // 布尔值
+            size_t bool_start = pos;
+            while(pos < len and body_[pos] != ',' and body_[pos] != '}' and 
+                  !(body_[pos] == ' ' or body_[pos] == '\t' or body_[pos] == '\n' or body_[pos] == '\r')) {
+                pos++;
+            }
+            value = body_.substr(bool_start, pos - bool_start);
+        } else if(body_[pos] == 'n') {
+            // null值
+            size_t null_start = pos;
+            while(pos < len and body_[pos] != ',' and body_[pos] != '}' and 
+                  !(body_[pos] == ' ' or body_[pos] == '\t' or body_[pos] == '\n' or body_[pos] == '\r')) {
+                pos++;
+            }
+            value = body_.substr(null_start, pos - null_start);
+        } else if(body_[pos] == '-' or (body_[pos] >= '0' and body_[pos] <= '9')) {
+            // 数字值
+            size_t num_start = pos;
+            while(pos < len and body_[pos] != ',' and body_[pos] != '}' and 
+                  !(body_[pos] == ' ' or body_[pos] == '\t' or body_[pos] == '\n' or body_[pos] == '\r')) {
+                pos++;
+            }
+            value = body_.substr(num_start, pos - num_start);
+        } else {
+            LOG_ERROR("Invalid JSON format: unexpected character for value");
+            return;
+        }
+        // 存储键值对
+        post_[key] = value;
+        LOG_DEBUG("[key ,value] = [{} : {}]", key.c_str(), value.c_str());
+        // 跳过空白字符
+        while(pos < len and (body_[pos] == ' ' or body_[pos] == '\t' or body_[pos] == '\n' or body_[pos] == '\r')) {
+            pos++;
+        }
+        // 检查是否有逗号
+        if(pos < len and body_[pos] == ',') {
+            pos++; // 跳过逗号，准备解析下一个键值对
+        }
+    }
+}
 
 
 
