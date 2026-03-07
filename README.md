@@ -5,7 +5,7 @@
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-blue?logo=mysql)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-一个高性能、高并发的 C++ HTTP Web 服务器，采用现代 C++20 标准开发。
+一个基于 C++20 标准开发的高性能、高并发的 HTTP Web 服务器，采用主从 Reactor 模型实现异步 I/O 处理。
 
 ## 🚀 核心特性
 
@@ -17,7 +17,7 @@
 
 ### HTTP 协议
 - **完整 HTTP 支持**: 实现 GET 和 POST 请求方法
-- **请求解析**: 利用有限状态机和正则表达式高效解析 HTTP 请求报文
+- **请求解析**: 利用有限状态机高效解析 HTTP 请求报文
 - **静态资源服务**: 支持多种文件类型（HTML、CSS、JS、图片、视频等）
 - **动态路由**: 灵活的短路径映射系统（如 `/login` → `/html/login.html`）
 - **错误处理**: 完善的 HTTP 状态码处理和错误页面
@@ -57,8 +57,8 @@
         └────────┬────────┘
                  │ (Accept)
         ┌────────▼────────────────────┐
-        │  Sub Reactor Thread Pool    │  (50 线程)
-        │  (处理已连接客户端)          │
+        │  Sub Reactor Thread Pool    │  
+        │  (处理已连接客户端)            │
         └────────┬────────────────────┘
                  │
         ┌────────▼────────────────────┐
@@ -72,7 +72,7 @@
     │            │                │
 ┌───▼───┐   ┌────▼────┐   ┌──────▼──────┐
 │ Timer │   │ Logger  │   │ SQL ConnPool│
-│ (堆)  │   │(异步队列)│   │  (10 连接)  │
+│ (堆)  │   │(异步队列)│    │             │
 └───────┘   └─────────┘   └─────────────┘
                                  │
                            ┌─────▼─────┐
@@ -101,12 +101,12 @@
 │   └── video/              # 视频资源
 ├── test/                   # 单元测试脚本
 ├── build/                  # 编译产物目录
-├── bin/                    # 可执行文件
+├── bin/                    # 可执行文件目录
 │   └── server              # HTTP 服务器可执行文件
 ├── log/                    # 日志文件目录
 ├── config.conf             # 服务器配置文件
 ├── init.sql                # 数据库初始化脚本
-├── Makefile                # 编译配置
+├── CMakeLists.txt          # 编译配置文件
 └── README.md               # 项目文档
 ```
 
@@ -115,7 +115,7 @@
 - **OS**: Linux (Ubuntu 20.04+ 推荐)
 - **编译器**: GCC 10+ 或 Clang 12+ (C++20 支持)
 - **数据库**: MySQL 8.0+
-- **构建工具**: Make
+- **构建工具**: CMake 3.10+
 - **依赖库**: libmysqlclient-dev、pthread
 
 ## 📥 快速开始
@@ -124,8 +124,8 @@
 
 #### 1. 克隆项目
 ```bash
-git clone https://github.com/RayTheCrack/WebServer.git
-cd WebServer
+git clone https://github.com/RayTheCrack/Oxy-WebServer.git
+cd Oxy-WebServer    
 ```
 
 #### 2. 安装依赖
@@ -142,7 +142,7 @@ mysql -u root -p < init.sql
 
 #### 4. 编译和运行
 ```bash
-make clean && make
+cmake -B build && cmake --build build
 ./bin/server
 ```
 
@@ -170,20 +170,46 @@ tail -f log/webserver.log
 编辑 `config.conf`：
 
 ```properties
-# 资源根目录
-resource_root = resources/
 
+# 资源根目录
+resource_root = resources/  
 # 日志配置
+
 log_file = log/webserver.log
-log_level = 1              # 0:DEBUG, 1:INFO, 2:WARN, 3:ERROR
+# 0 : DEBUG 1 : INFO 2 : WARN 3 : ERROR
+log_level = 3
+# 日志队列最大容量
 log_queue_size = 1024
+# 强制刷盘间隔（秒）
 log_flush_interval = 3
+# 是否启用日志
+open_log = true
 
 # 网络配置
+
+# 端口
+# Server listening port
 port = 9999
-thread_num = 50
-max_body_size = 1048576    # 1MB
+# 是否优雅关闭服务器
+opt_linger = false       
+# Epoll触发模式 1 : LT LT 2 : LT ET 3 : ET LT 4 : ET ET
+trigger_mode = 4
+# 线程池线程数量
+thread_num = 32
+# 最大请求体大小（字节）1MB
+max_body_size = 1048576  
+# 连接超时时间（秒）
 connection_timeout = 60
+
+# 数据库配置
+
+# 连接池大小
+connection_pool_size = 16
+db_host = 127.0.0.1
+db_port = 3306
+db_user = root
+db_password = password
+db_name = webserver
 ```
 
 ## 🔗 API 端点
@@ -223,4 +249,4 @@ MIT License
 ---
 
 **版本**: 1.0.0  
-**最后更新**: 2026 年 2 月 24 日
+**最后更新**: 2026 年 2 月 25 日

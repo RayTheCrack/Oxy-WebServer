@@ -122,6 +122,10 @@ void WebServer::CloseConn_(HttpConnect& client) {
     assert(client.get_fd() > 0);
     LOG_INFO("Client[{}] quit!", client.get_fd());
     epoller_->del_fd(client.get_fd());
+    // 从定时器中移除该连接
+    if(timeoutMS_ > 0) {
+        timer_->do_work(client.get_fd());
+    }
     client.close(); // 关闭连接
 }
 

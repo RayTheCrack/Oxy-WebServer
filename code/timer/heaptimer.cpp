@@ -15,7 +15,9 @@ static size_t get_ms_timestamp() {
 }
 
 void HeapTimer::shift_up_(size_t curnode) {
-    assert(curnode < heap_.size());
+    if(curnode >= heap_.size()) {
+        return;
+    }
     size_t father = (curnode - 1) / 2;
     while(true) { // 调整至不能再上浮
         if(heap_[curnode].first >= heap_[father].first) break;
@@ -27,7 +29,9 @@ void HeapTimer::shift_up_(size_t curnode) {
 }
 
 void HeapTimer::shift_down_(size_t curnode) {
-    assert(curnode < heap_.size());
+    if(curnode >= heap_.size()) {
+        return;
+    }
     size_t siz = heap_.size();
     size_t left_child = (curnode << 1) | 1;
     while(left_child < siz) {
@@ -46,7 +50,9 @@ void HeapTimer::shift_down_(size_t curnode) {
 } 
 
 void HeapTimer::swap_node_(size_t node_x, size_t node_y) {
-    assert(node_x < heap_.size() and node_y < heap_.size());
+    if(node_x >= heap_.size() || node_y >= heap_.size()) {
+        return;
+    }
     std::swap(heap_[node_x], heap_[node_y]);
     map_[heap_[node_x].second] = node_x;
     map_[heap_[node_y].second] = node_y;
@@ -90,18 +96,21 @@ void HeapTimer::adjust(int fd, int new_expire_time) {
 void HeapTimer::do_work(int fd) {
     assert(fd >= 0);
     if(heap_.empty() or map_.count(fd) == 0) return;
-    // 执行回调函数
+    // 获取节点索引
     size_t idx = map_[fd];
+    // 先删除节点，避免在回调函数中再次调用do_work导致问题
+    del_(idx);
+    // 执行回调函数（如果存在）
     if(cb_map_.count(fd)) {
         cb_map_[fd]();
     }
-    // 删除节点
-    del_(idx);
     LOG_DEBUG("HeapTimer do_work fd {}", fd);
 }
 
 void HeapTimer::del_(size_t node) {
-    assert(node < heap_.size());
+    if(heap_.empty() || node >= heap_.size()) {
+        return;
+    }
     size_t last_idx = heap_.size() - 1;
     // 如果是最后一个节点，直接删除
     if(node == last_idx) {
@@ -120,8 +129,10 @@ void HeapTimer::del_(size_t node) {
     cb_map_.erase(del_fd);
     heap_.pop_back();
     // 调整堆（上浮+下沉）, 此时node为原堆尾节点
-    shift_up_(node);
-    shift_down_(node);
+    if(node < heap_.size()) {
+        shift_up_(node);
+        shift_down_(node);
+    }
     LOG_DEBUG("HeapTimer del_ fd {}, index {}", del_fd, node);
 }
 
