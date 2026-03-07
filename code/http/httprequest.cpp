@@ -67,20 +67,18 @@ bool HttpRequest::parse(Buffer& buff) {
 // 请求行形式 ： GET / HTTP/1.1
 bool HttpRequest::ParseRequestLine_(const std::string line) {
     // 使用字符串查找代替正则表达式，提高效率
+    LOG_DEBUG("Parsing request line: {}", line.c_str());
     size_t method_end = line.find(' ');
     if(method_end == std::string::npos) {
-        LOG_ERROR("RequestLine Error : {}", line.c_str());
         return false;
     }
     size_t path_end = line.find(' ', method_end + 1);
     if(path_end == std::string::npos) {
-        LOG_ERROR("RequestLine Error : {}", line.c_str());
         return false;
     }
     // 查找 HTTP/ 前缀
     size_t http_pos = line.find("HTTP/", path_end + 1);
     if(http_pos == std::string::npos) {
-        LOG_ERROR("RequestLine Error : {}", line.c_str());
         return false;
     }
     method_ = line.substr(0, method_end);

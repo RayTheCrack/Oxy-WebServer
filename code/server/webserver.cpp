@@ -158,6 +158,10 @@ void WebServer::HandleListen_() {
     do {
         int fd = accept(listenFd_, reinterpret_cast<sockaddr*>(&addr), &len);
         if(fd < 0) {
+            // ET模式下，EAGAIN/EWOULDBLOCK表示没有更多连接，是正常情况
+            if(listenEvent_ & EPOLLET and (errno == EAGAIN or errno == EWOULDBLOCK)) {
+                return;  // 正常退出，不记录错误
+            }
             LOG_ERROR("Accept error!");
             return;
         }
