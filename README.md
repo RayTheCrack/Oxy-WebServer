@@ -188,7 +188,6 @@ log_level = 3
 # 日志队列最大容量
 log_queue_size = 1024
 # 强制刷盘间隔（秒）
-# 强制刷盘间隔（秒）
 log_flush_interval = 3
 # 是否启用日志
 open_log = true
