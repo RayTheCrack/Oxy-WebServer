@@ -172,32 +172,21 @@ tail -f log/webserver.log
 
 ```properties
 
-
 # 资源根目录
-resource_root = resources/  
 resource_root = resources/  
 # 日志配置
 
-
 log_file = log/webserver.log
 # 0 : DEBUG 1 : INFO 2 : WARN 3 : ERROR
-log_level = 3
-# 日志队列最大容量
-# 0 : DEBUG 1 : INFO 2 : WARN 3 : ERROR
-log_level = 3
+log_level = 1
 # 日志队列最大容量
 log_queue_size = 1024
 # 强制刷盘间隔（秒）
 log_flush_interval = 3
 # 是否启用日志
 open_log = true
-# 是否启用日志
-open_log = true
 
 # 网络配置
-
-# 端口
-# Server listening port
 
 # 端口
 # Server listening port
@@ -211,31 +200,13 @@ thread_num = 32
 # 最大请求体大小（字节）1MB
 max_body_size = 1048576  
 # 连接超时时间（秒）
-# 是否优雅关闭服务器
-opt_linger = false       
-# Epoll触发模式 1 : LT LT 2 : LT ET 3 : ET LT 4 : ET ET
-trigger_mode = 4
-# 线程池线程数量
-thread_num = 32
-# 最大请求体大小（字节）1MB
-max_body_size = 1048576  
-# 连接超时时间（秒）
 connection_timeout = 60
 
 # 数据库配置
-
 # 连接池大小
 connection_pool_size = 16
-db_host = 127.0.0.1
-db_port = 3306
-db_user = root
-db_password = password
-db_name = webserver
-
-# 数据库配置
-
-# 连接池大小
-connection_pool_size = 16
+# 最大并发连接数（系统/测试环境可支持的上限）
+max_connections = 10000
 db_host = 127.0.0.1
 db_port = 3306
 db_user = root
