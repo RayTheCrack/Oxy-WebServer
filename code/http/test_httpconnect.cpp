@@ -133,7 +133,8 @@ void testReadRequest() {
 
     // 读取请求
     // 使用临时缓冲区
-    ssize_t read_bytes = conn.read(server_fd, conn.getReadBuffer());
+    int tmp_err = 0;
+    ssize_t read_bytes = conn.read(server_fd, conn.getReadBuffer(), tmp_err);
 
     // 验证读取结果
     assert(read_bytes > 0);
@@ -178,7 +179,8 @@ void testProcessRequest() {
 
     // 读取请求
     // 读取请求到HttpConnect的内部缓冲区
-    ssize_t read_bytes = conn.read(server_fd, conn.getReadBuffer());
+    int tmp_err = 0;
+    ssize_t read_bytes = conn.read(server_fd, conn.getReadBuffer(), tmp_err);
     assert(read_bytes > 0);
 
     // 处理请求
@@ -195,6 +197,43 @@ void testProcessRequest() {
     close(client_fd);
 
     LOG_INFO("✓ Test 3 passed!");
+    cleanupTestResources(testDir);
+}
+
+// 测试4: 健康检查路径
+void testHealthEndpoint() {
+    LOG_INFO("=== Test 4: Health Endpoint ===");
+    std::string testDir = "test_resources";
+    setupTestResources(testDir);
+    HttpConnect::srcDir = testDir.c_str();
+
+    auto [client_fd, server_fd] = createSocketPair();
+    assert(client_fd >= 0 && server_fd >= 0);
+    sockaddr_in client_addr{};
+    client_addr.sin_family = AF_INET;
+    client_addr.sin_port = htons(8080);
+    inet_pton(AF_INET, "127.0.0.1", &client_addr.sin_addr);
+
+    HttpConnect conn;
+    conn.init(server_fd, client_addr);
+
+    std::string request = "GET /health HTTP/1.1\r\nHost: localhost:8080\r\nConnection: close\r\n\r\n";
+    send(client_fd, request.c_str(), request.size(), 0);
+    int tmp_err = 0;
+    ssize_t read_bytes = conn.read(server_fd, conn.getReadBuffer(), tmp_err);
+    assert(read_bytes > 0);
+
+    bool process_result = conn.process();
+    assert(process_result == true);
+    assert(conn.to_write_bytes() > 0);
+
+    // 检查返回内容是否包含 'healthy'
+    std::string response(conn.getWriteBuffer().peek(), conn.to_write_bytes());
+    assert(response.find("healthy") != std::string::npos);
+
+    conn.close();
+    close(client_fd);
+    LOG_INFO("✓ Test 4 passed!");
     cleanupTestResources(testDir);
 }
 
@@ -288,7 +327,8 @@ void testKeepAliveConnection() {
 
     // 读取并处理第一个请求
     // 使用临时缓冲区
-    conn.read(server_fd, conn.getReadBuffer());
+    int tmp_err = 0;
+    conn.read(server_fd, conn.getReadBuffer(), tmp_err);
     conn.process();
 
     // 验证Keep-Alive
@@ -300,7 +340,10 @@ void testKeepAliveConnection() {
     send(client_fd, request2.c_str(), request2.size(), 0);
 
     // 读取并处理第二个请求
-    conn.read(server_fd, conn.getReadBuffer());
+    {
+        int tmp_err2 = 0;
+        conn.read(server_fd, conn.getReadBuffer(), tmp_err2);
+    }
     conn.process();
 
     // 验证第二个请求也成功处理
@@ -580,7 +623,7 @@ void testInvalidRequest() {
 
 int main() {
     // 初始化日志系统
-    Logger::getInstance().initLogger("log/httpconnect.log", LogLevel::DEBUG, 1024, 3);
+    Logger::getInstance().initLogger("log/httpconnect.log", LogLevel::DEBUG, 1024);
 
     LOG_INFO("Starting HTTP Connect Tests...");
     LOG_INFO("===============================");

@@ -40,7 +40,7 @@ WebServer::WebServer()
             case 3: level = LogLevel::ERROR; break;
             default: level = LogLevel::INFO; break;
         }
-        Logger::getInstance().initLogger(Config::getInstance().c_log_file.c_str(), level, Config::getInstance().c_log_queue_size);
+        Logger::getInstance().initLogger((Config::getInstance().c_log_file + "[port:" + std::to_string(port_) + "].log").c_str(), level, Config::getInstance().c_log_queue_size);
         LOG_INFO("=============Oxy Server init success=============");
         LOG_INFO("port: {}, log_level: {}", port_, Config::getInstance().c_log_level);
         LOG_INFO("Resource root: {}, Open linger: {}", srcDir_, openLinger_ ? "true" : "false");

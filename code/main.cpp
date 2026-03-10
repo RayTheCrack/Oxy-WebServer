@@ -15,9 +15,11 @@ void signal_handler(int sig) {
         }
     }
 }
-int main() {
+int main(int argc, char* argv[]) {
     signal(SIGINT, signal_handler);
     Config::getInstance().parse_config_file("config.conf");
+    if(argc > 1)
+        Config::getInstance().parse_args(argc, argv);
     WebServer server;
     g_server = &server;
     server.start();

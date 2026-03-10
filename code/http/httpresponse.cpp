@@ -61,6 +61,19 @@ void HttpResponse::Init(const std::string& srcDir, std::string& path, bool isKee
 };
 
 void HttpResponse::MakeResponse(Buffer& buff) {
+    // special case for health check, do not touch file system
+    if(path_ == "/health") {
+        // simple plain text response
+        std::string body = "healthy";
+        code_ = 200;
+        buff.append("HTTP/1.1 200 OK\r\n");
+        buff.append("Content-Type: text/plain\r\n");
+        buff.append("Content-Length: " + std::to_string(body.size()) + "\r\n");
+        buff.append("Connection: " + std::string(isKeepAlive_ ? "keep-alive\r\n" : "close\r\n"));
+        buff.append("\r\n");
+        buff.append(body);
+        return;
+    }
     // 只有在code_为-1时才调用stat获取文件信息
     if(code_ == -1) {
         // stat()获取文件的元信息（大小、权限、类型等）并写入 mmFileStat_

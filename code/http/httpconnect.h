@@ -25,6 +25,10 @@ public:
     // 每个连接的读写窗口
     ssize_t read(int fd, Buffer& buff, int& errno_);
     ssize_t write(int fd, Buffer& buff, int& errno_);
+    // 兼容旧接口的便捷重载：测试代码可以不传 errno 参数
+    inline ssize_t read(int fd, Buffer& buff) { int err=0; return read(fd, buff, err); }
+    inline ssize_t write(int fd, Buffer& buff) { int err=0; return write(fd, buff, err); }
+
     ssize_t writeResponse(int fd); // 写入已准备好的响应数据
 
     void close();
