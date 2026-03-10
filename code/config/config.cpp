@@ -11,7 +11,7 @@ Config& Config::getInstance() {
 }
 /*
     getopt 工作原理（执行流程）
-    以你的代码 while ((opt = getopt(argc, argv, "p:t:r:")) != -1) 为例，执行流程是：
+    以 while ((opt = getopt(argc, argv, "p:t:r:")) != -1) 为例，执行流程是：
     第一次循环：getopt 从 argv[1] 开始扫描，找到第一个参数（如 -p），检查是否在 optstring 中；
     验证规则：如果是 -p（对应 p:），则读取后续的 8080 作为值，存入 optarg，返回 'p'；
     自动移动索引：optind 自动跳到下一个未解析的参数（比如解析完 -p 8080 后，optind=3）；

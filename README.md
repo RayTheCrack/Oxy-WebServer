@@ -5,7 +5,7 @@
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-blue?logo=mysql)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-一个基于 C++20 标准开发的高性能、高并发的 HTTP Web 服务器，采用主从 Reactor 模型实现异步 I/O 处理。
+一个基于 C++20 标准开发的高性能、高并发的 HTTP Web 服务器，支持分布式部署，采用主从 Reactor 模型实现异步 I/O 处理。
 
 ## 🚀 核心特性
 
@@ -14,7 +14,7 @@
 - **主从 Reactor 模型**: 采用多线程线程池实现高并发处理，支持 LT/ET 边界触发模式组合
 - **长连接支持**: 完整实现 HTTP 1.1 长连接、Keep-Alive 机制
 - **超时管理**: 基于小根堆实现的定时器，自动关闭超时非活动连接
-- **支持分布式部署**: 支持多台服务器部署，使用 Nginx 实现负载均衡和高可用
+- **支持分布式部署**: 支持多台服务器部署，基于 Nginx 实现负载均衡和高可用
 
 ### HTTP 协议
 - **完整 HTTP 支持**: 实现 GET 和 POST 请求方法
@@ -123,25 +123,27 @@
 
 如果需要横向扩展，只需在 `nginx.conf` 做小范围调整并运行多个后端实例：
 
-1. **修改 Nginx**
-   - 定义 `upstream webserver_backend`，列出各实例 `host:port`。
-   - 保留或设置 `proxy_cache_path` 与静态资源 `root`。
-   - 添加 `/health` 位置块返回 `200\n` 供探活。
-2. **启动后端**
-   - 每个实例用不同端口启动：
-     ```bash
-     ./bin/server -p 9999 &
-     ./bin/server -p 10000 &
-     ```
-3. **启动/重载 Nginx**
-   ```bash
-   sudo nginx -c /path/to/nginx.conf
-   # 或 reload: sudo nginx -s reload -c /path/to/nginx.conf
-   ```
-4. 访问 `http://<nginx-host>/`，Nginx 会根据最少连接等算法在可用后端间分发请求。
+### 修改 Nginx 配置
+- 定义 `upstream webserver_backend`，列出各实例 `host:port`。
+- 创建 `proxy_cache_path` 缓存目录，用于存储动态内容。
+- 静态资源 `root` 设置为项目目录下的 `resources` 目录。
 
+### 启动后端
+
+每个实例用不同端口启动：
+```bash
+./bin/server -p 9999 &
+./bin/server -p 10000 &
+```
+### 启动/重载 Nginx
+
+```bash
+sudo nginx -c /path/to/nginx.conf
+# 或 reload: sudo nginx -s reload -c /path/to/nginx.conf
+   ```
+访问 `http://<nginx-host>/`，Nginx 会根据最少连接等算法在可用后端间分发请求。
 只要保证静态目录对 Nginx 运行用户可遍历，这套配置即能支持分布式部署。
-- **依赖库**: libmysqlclient-dev、pthread
+
 
 ## 📥 快速开始
 
